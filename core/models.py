@@ -5,9 +5,6 @@ from django.core.validators import RegexValidator
 
 class AccountManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
-        """
-        Creates and saves a User with the given phone number and password.
-        """
         if not phone_number:
             raise ValueError('Users must have a phone number')
 
@@ -21,9 +18,6 @@ class AccountManager(BaseUserManager):
         return user
 
     def create_superuser(self, phone_number, password=None, **extra_fields):
-        """
-        Creates and saves a superuser with the given phone number and password.
-        """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
@@ -47,12 +41,10 @@ class Account(AbstractBaseUser, PermissionsMixin):
         verbose_name='Phone Number'
     )
 
-    # Required fields for custom user model
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
 
-    # Password fields (as requested)
     password = models.CharField(max_length=128, verbose_name='password')
     password2 = models.CharField(max_length=128, verbose_name='confirm password')
 
