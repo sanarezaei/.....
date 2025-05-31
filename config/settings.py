@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 from django.conf.global_settings import AUTH_USER_MODEL
 
@@ -39,8 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # externall app
+    # external app
     'rest_framework',
+    'rest_framework_simplejwt',
 
     # internal app
     'core',
@@ -133,4 +135,15 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-AUTH_USER_MODEL = 'core.Account'
+AUTH_USER_MODEL = 'core.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}

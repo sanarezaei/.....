@@ -1,32 +1,35 @@
 from rest_framework import serializers
-from .models import Account, Profile
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from .models import User
 
 
-class AccountSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.ModelSerializer):
+    password2 =    serializers.CharField(write_only=True)
+
     class Meta:
-        model = Account
+        model = User
         fields = ['phone_number', 'password', 'password2']
         extra_kwargs = {
-            'password': {'write_only': True},
-            'password2': {'write_only': True}
+            'password': {'write_only': True}
         }
 
-    def validate(self, data):
-        if data['password'] != data['password2']:
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError("Passwords don't match")
-        return data
+        return attrs
 
     def create(self, validated_data):
-        account = Account.objects.create_user(
+        user = User.objects.create_user(
             phone_number=validated_data['phone_number'],
             password=validated_data['password'],
             password2=validated_data['password2']
         )
-        return account
+        return user
 
-
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Profile
-        fields = ['account', 'first_name', 'last_name', 'email', 'birth_date', 'bio']
-        read_only_fields = ['account']
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['phone_number'] = user.phone_number
+        return token
