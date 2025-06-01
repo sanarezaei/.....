@@ -1,23 +1,21 @@
+from django.contrib.admin.utils import model_ngettext
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User
+from .models import User, Profile
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password2 =    serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
         fields = ['phone_number', 'password', 'password2']
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
+    def validate(self, data):
+        if data['password'] != data['password2']:
             raise serializers.ValidationError("Passwords don't match")
-        return attrs
+        return data
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -33,3 +31,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token['phone_number'] = user.phone_number
         return token
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    phone_number = serializers.CharField(source='user.profile_number', read_only=True)
+    class Meta:
+        model = Profile
+        fields = ['id', 'phone_number', 'first_name', \
+                  'last_name', 'bio', 'birth_date', 'avatar', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']

@@ -2,15 +2,11 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .models import User
-from .forms import CustomUserChangeForm, CustomUserCreationForm
 
 class CustomUserAdmin(UserAdmin):
-    add_form = CustomUserCreationForm
-    form = CustomUserChangeForm
-    filter_horizontal = ()
-
     list_display = ('phone_number', 'is_staff', 'is_active')
     list_filter = ('is_staff', 'is_active' ,'is_active')
+    filter_horizontal = ()
 
     fieldsets = (
         (None, {'fields': ('phone_number', 'password')}),
