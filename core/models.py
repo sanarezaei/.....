@@ -1,19 +1,34 @@
+import re
+from xml.etree.ElementInclude import default_loader
+
+from django.core.files.storage import default_storage
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.core.validators import RegexValidator
-from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.contrib.auth.models import BaseUserManager, AbstractUser
+
+def validate_phone(value):
+    if not value:
+        raise ValidationError("شماره تلفن نمیتواند خالی باشد")
+    if not re.match(r'^09\d{9}$', value):
+        return ValidationError("شماره تلفن شما باید از 09 شروع شود و 11 رقم باشد0")
+
+def path_image_user(instance, filename):
+    model_name = instance.__class__.__name__.lower()
+    return f"uploads/{model_name}/{instance.pk or 'new'}/{filename}"
 
 class UserManager(BaseUserManager):
-    def create_user(self, phone_number, password=None, password2=None, **extra_fields):
-        if not phone_number:
-            raise ValueError('Users must have a phone number')
+    def create_user(self, phone, password=None, **extra_fields):
+        if not phone:
+            raise ValueError("شماره تلفن الزامی است")
+        if not password:
+            raise ValueError("پسورد الزامی است")
 
-        user = self.model(phone_number=phone_number, **extra_fields)
+        user = self.model(phone=phone, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone_number, password=None, **extra_fields):
+    def create_superuser(self, phone, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -26,46 +41,49 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True")
 
         return self.create_user(
-            phone_number=phone_number,
+            phone=phone,
             password=password,
             **extra_fields
         )
 
+class User(AbstractUser):
+    first_name = None
+    last_name = None
+    username = None
+    fullname = models.CharField(max_length=255, blank=True, null=True)
+    gender = models.CharField(choices=[('male', 'مرد'), ('female', 'زن')], blank=True, null=True)
+    birth_date = models.DateField( blank=True, null=True)
+    image = models.ImageField(upload_to=path_image_user, blank=True, null=True)
 
-class User(AbstractBaseUser, PermissionsMixin):
-    phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$')
-    phone_number = models.CharField(
-        validators=[phone_regex],
-        max_length=17,
-        unique=True,
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(
+        validators=[validate_phone],
+        max_length = 11,
+        unique = True
     )
-    password = models.CharField(max_length=128)
-    password2 = models.CharField(max_length=128, blank=True, null=True)
 
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
-
-    USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = []
+    USERNAME_FIELD = 'phone'
+    REQUIRED_FIELDS = ['email']
 
     objects = UserManager()
 
     def __str__(self):
-        return self.phone_number
+        return self.phone
 
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old_instance = self.__class__.objects.filter(pk=self.pk).first()
+            if (
+                old_instance
+                and old_instance.image
+                and old_instance.image.name
+                and self.image != old_instance.image
+            ):
+                if default_storage.exists(old_instance.image.path):
+                    default_storage.delete(old_instance.image.path)
+        super().save(*args, **kwargs)
 
-class Profile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,\
-                                verbose_name="profile")
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
-    bio = models.TextField()
-    birth_date = models.DateField(null=True, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True,\
-                               default='avatars/default.png')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.user.phone_number}'s Profile"
+    def delete(self, *args, **kwargs):
+        if self.image and default_storage.exists(self.image.path):
+            default_storage.delete(self.image.path)
+        super().delete(*args, **kwargs)

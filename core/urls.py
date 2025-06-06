@@ -1,18 +1,9 @@
-from django.urls import path,include
-from rest_framework.routers import DefaultRouter
-from django.conf import settings
-from django.conf.urls.static import static
+from django.urls import path
 
-from .views import RegisterView, LoginView, ProfileViewSet
-
-router = DefaultRouter()
-router.register(r'profiles', ProfileViewSet, basename='profile')
+from .views import RegisterApiView, LoginApiView, RefreshTokenApiView
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', LoginView.as_view(), name='login'),
-    path('', include(router.urls))
+    path('register/', RegisterApiView.as_view(), name="register"),
+    path('login/', LoginApiView.as_view(), name="login"),
+    path('refresh/', RefreshTokenApiView.as_view(), name="refresh")
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
