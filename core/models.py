@@ -51,7 +51,7 @@ class User(AbstractUser):
     last_name = None
     username = None
     fullname = models.CharField(max_length=255, blank=True, null=True)
-    gender = models.CharField(choices=[('male', 'مرد'), ('female', 'زن')], blank=True, null=True)
+    gender = models.CharField(max_length=6, choices=[('male', 'مرد'), ('female', 'زن')], blank=True, null=True)
     birth_date = models.DateField( blank=True, null=True)
     image = models.ImageField(upload_to=path_image_user, blank=True, null=True)
 
