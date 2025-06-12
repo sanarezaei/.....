@@ -22,11 +22,18 @@ class RefreshTokenSerializer(serializers.Serializer):
         return value
 
 
-class PasswordResetRequestSerializer(serializers.Serializer):
-    phone = serializers.CharField(required=True)
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["fullname", "gender", "birth_date", "image", "email", "phone"]
+        read_only_fields = ['phone']
 
 
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    phone = serializers.CharField(required=True)
-    code = serializers.CharField(required=True, max_length=10)
-    new_password = serializers.CharField(required=True)
+# class PasswordResetRequestSerializer(serializers.Serializer):
+#     phone = serializers.CharField(required=True)
+#
+#
+# class PasswordResetConfirmSerializer(serializers.Serializer):
+#     phone = serializers.CharField(required=True)
+#     code = serializers.CharField(required=True, max_length=10)
+#     new_password = serializers.CharField(required=True)
